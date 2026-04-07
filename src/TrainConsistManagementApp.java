@@ -1,14 +1,32 @@
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+
+
 public class TrainConsistManagementApp {
 
-    // Inner Bogie class
+    // Custom Exception for invalid bogie capacity
+    static class InvalidCapacityException extends Exception {
+        public InvalidCapacityException(String message) {
+            super(message);
+        }
+    }
+
+    // Inner Bogie class with validation
     static class Bogie {
         String name;
         int capacity;
 
-        Bogie(String name, int capacity) {
+        Bogie(String name, int capacity) throws InvalidCapacityException {
+            if (capacity <= 0) {
+                throw new InvalidCapacityException(
+                        "Invalid capacity (" + capacity + ") for bogie '" + name + "': capacity must be positive."
+                );
+            }
+            if (capacity > 150) {
+                throw new InvalidCapacityException(
+                        "Invalid capacity (" + capacity + ") for bogie '" + name + "': exceeds maximum limit of 150."
+                );
+            }
             this.name = name;
             this.capacity = capacity;
         }
@@ -17,62 +35,54 @@ public class TrainConsistManagementApp {
     public static void main(String[] args) {
 
         System.out.println("==================================================");
-        System.out.println(" UC13 - Performance Comparison (Loops vs Streams) ");
+        System.out.println(" UC14 - Handle Invalid Bogie Capacity ");
         System.out.println("==================================================\n");
 
-        // Create a large list of bogies for benchmarking
-        List<Bogie> bogies = new ArrayList<>();
-        String[] types = {"Sleeper", "AC Chair", "First Class", "Second Sitting", "Third AC", "General"};
-        int[] capacities = {72, 60, 24, 90, 64, 100};
+        // Test data: mix of valid and invalid capacities
+        String[] names = {"Sleeper-S1", "AC Chair-A1", "General-G1", "First Class-F1", "Invalid-X1", "Overflow-O1"};
+        int[] capacities = {72, 60, 90, 24, -5, 200};
 
-        for (int i = 0; i < 100000; i++) {
-            int idx = i % types.length;
-            bogies.add(new Bogie(types[idx] + "-" + i, capacities[idx]));
-        }
+        List<Bogie> validBogies = new ArrayList<>();
+        int errorCount = 0;
 
-        System.out.println("Dataset size: " + bogies.size() + " bogies\n");
-        System.out.println("Task: Filter bogies with capacity > 60\n");
+        System.out.println("Processing Bogie Entries:\n");
 
-        // ── Method 1: Traditional For-Loop ──
-        long startLoop = System.nanoTime();
-
-        List<Bogie> filteredLoop = new ArrayList<>();
-        for (Bogie b : bogies) {
-            if (b.capacity > 60) {
-                filteredLoop.add(b);
+        for (int i = 0; i < names.length; i++) {
+            try {
+                System.out.println("  Attempting to create: " + names[i] + " (capacity: " + capacities[i] + ")");
+                Bogie bogie = new Bogie(names[i], capacities[i]);
+                validBogies.add(bogie);
+                System.out.println("    → ✓ Created successfully\n");
+            } catch (InvalidCapacityException e) {
+                System.out.println("    → ✗ ERROR: " + e.getMessage() + "\n");
+                errorCount++;
+            } finally {
+                // Finally block always executes
             }
         }
 
-        long endLoop = System.nanoTime();
-        long loopTime = endLoop - startLoop;
+        // Display summary
+        System.out.println("── Processing Summary ──\n");
+        System.out.println("  Total entries processed: " + names.length);
+        System.out.println("  Successfully created:    " + validBogies.size());
+        System.out.println("  Errors encountered:      " + errorCount);
 
-        // ── Method 2: Stream API ──
-        long startStream = System.nanoTime();
+        System.out.println("\nValid Bogies:");
+        for (Bogie b : validBogies) {
+            System.out.println("  " + b.name + " → Capacity: " + b.capacity);
+        }
 
-        List<Bogie> filteredStream = bogies.stream()
-                .filter(b -> b.capacity > 60)
-                .collect(Collectors.toList());
-
-        long endStream = System.nanoTime();
-        long streamTime = endStream - startStream;
-
-        // ── Display Results ──
-        System.out.println("── Performance Results ──\n");
-
-        System.out.println("Traditional For-Loop:");
-        System.out.println("  Filtered count: " + filteredLoop.size());
-        System.out.println("  Time taken: " + loopTime + " ns (" + (loopTime / 1_000_000.0) + " ms)");
-
-        System.out.println("\nStream API:");
-        System.out.println("  Filtered count: " + filteredStream.size());
-        System.out.println("  Time taken: " + streamTime + " ns (" + (streamTime / 1_000_000.0) + " ms)");
-
-        System.out.println("\n── Comparison ──");
-        String faster = loopTime < streamTime ? "For-Loop" : "Stream API";
-        double ratio = loopTime < streamTime
-                ? (double) streamTime / loopTime
-                : (double) loopTime / streamTime;
-        System.out.println("  " + faster + " was faster by " + String.format("%.2f", ratio) + "x");
+        // Demonstrate NumberFormatException handling
+        System.out.println("\n── Parsing Test ──\n");
+        String[] rawInputs = {"72", "abc", "60", "null", "24"};
+        for (String input : rawInputs) {
+            try {
+                int parsed = Integer.parseInt(input);
+                System.out.println("  Parsed '" + input + "' → " + parsed + " ✓");
+            } catch (NumberFormatException e) {
+                System.out.println("  Parsed '" + input + "' → ERROR: Not a valid number ✗");
+            }
+        }
 
         System.out.println("\nProgram continues...");
     }
