@@ -1,58 +1,102 @@
+// Custom Runtime Exception
 class CargoSafetyException extends RuntimeException {
     public CargoSafetyException(String message) {
         super(message);
     }
 }
 
-class GoodsBogie {
-    private String bogieId;
-    private String shape;
-    private String currentCargo;
+// Enum for Cargo Types
+enum CargoType {
+    COAL,
+    GRAINS,
+    PETROLEUM
+}
 
-    public GoodsBogie(String bogieId, String shape) {
+// Abstract Goods Bogie
+abstract class GoodsBogie {
+    protected String bogieId;
+    protected CargoType cargo;
+
+    public GoodsBogie(String bogieId) {
         this.bogieId = bogieId;
-        this.shape = shape;
     }
 
-    public void assignCargo(String cargoType) {
-        System.out.println("Validating cargo assignment for " + bogieId + "...");
+    public abstract String getShape();
 
+    // UC15: Safe cargo assignment using try-catch-finally
+    public void assignCargo(CargoType cargoType) {
         try {
-            // Rule: Petroleum cannot be assigned to Rectangular bogies
-            if (shape.equalsIgnoreCase("Rectangular") && cargoType.equalsIgnoreCase("Petroleum")) {
-                throw new CargoSafetyException("Unsafe cargo assignment! Petroleum cannot be in a Rectangular bogie.");
-            }
-
-            this.currentCargo = cargoType;
-            System.out.println("Cargo assigned successfully -> " + cargoType);
-
-        } catch (CargoSafetyException e) {
-            // Handle the specific safety exception without crashing
-            System.out.println("Error: " + e.getMessage());
-
-        } finally {
-            // This block always executes for logging or cleanup
-            System.out.println("Cargo validation completed for " + shape + " bogie (" + bogieId + ").");
+            validateCargo(cargoType);
+            this.cargo = cargoType;
+            System.out.println("Cargo " + cargoType + " assigned to " + bogieId);
         }
+        catch (CargoSafetyException e) {
+            System.out.println("ERROR: " + e.getMessage());
+        }
+        finally {
+            System.out.println("Assignment attempt completed for " + bogieId);
+        }
+    }
+
+    // Validation logic
+    private void validateCargo(CargoType cargoType) {
+        if (this.getShape().equalsIgnoreCase("Rectangular")
+                && cargoType == CargoType.PETROLEUM) {
+            throw new CargoSafetyException(
+                    "Unsafe cargo! Petroleum cannot be loaded into a Rectangular Bogie: " + bogieId
+            );
+        }
+    }
+
+    public CargoType getCargo() {
+        return cargo;
     }
 }
 
+// Rectangular Bogie
+class RectangularBogie extends GoodsBogie {
+    public RectangularBogie(String bogieId) {
+        super(bogieId);
+    }
+
+    @Override
+    public String getShape() {
+        return "Rectangular";
+    }
+}
+
+// Cylindrical Bogie
+class CylindricalBogie extends GoodsBogie {
+    public CylindricalBogie(String bogieId) {
+        super(bogieId);
+    }
+
+    @Override
+    public String getShape() {
+        return "Cylindrical";
+    }
+}
+
+// Main Application
 public class TrainConsistManagementApp {
     public static void main(String[] args) {
-        System.out.println("=======================================");
-        System.out.println("UC15 - Safe Cargo Assignment");
-        System.out.println("=======================================");
 
-        // Case 1: Safe Assignment (Cylindrical + Petroleum)
-        GoodsBogie bogie1 = new GoodsBogie("B001", "Cylindrical");
-        bogie1.assignCargo("Petroleum");
+        GoodsBogie rectBogie = new RectangularBogie("RB1");
+        GoodsBogie cylBogie = new CylindricalBogie("CB1");
+
+        // Safe assignment
+        rectBogie.assignCargo(CargoType.COAL);
 
         System.out.println();
 
-        // Case 2: Unsafe Assignment (Rectangular + Petroleum) [cite: 1]
-        GoodsBogie bogie2 = new GoodsBogie("B002", "Rectangular");
-        bogie2.assignCargo("Petroleum");
+        // Unsafe assignment (should trigger exception)
+        rectBogie.assignCargo(CargoType.PETROLEUM);
 
-        System.out.println("\nUC15 runtime handling completed...");
+        System.out.println();
+
+        // Safe assignment
+        cylBogie.assignCargo(CargoType.PETROLEUM);
+
+        System.out.println("\nProgram continues after handling exceptions...");
     }
 }
