@@ -1,88 +1,90 @@
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 
-// UC19: Binary Search for Bogie ID
-
-class BogieBinarySearch {
-
-    public static boolean binarySearch(String[] bogieIds, String key) {
-
-        int low = 0;
-        int high = bogieIds.length - 1;
-
-        while (low <= high) {
-
-            int mid = (low + high) / 2;
-
-            int result = key.compareTo(bogieIds[mid]);
-
-            // Match found
-            if (result == 0) {
-                return true;
-            }
-            // Search in right half
-            else if (result > 0) {
-                low = mid + 1;
-            }
-            // Search in left half
-            else {
-                high = mid - 1;
-            }
-        }
-
-        return false; // Not found
-    }
-
-    public static void displayResult(String key, boolean found) {
-        if (found) {
-            System.out.println("Bogie ID " + key + " FOUND in the consist.");
-        } else {
-            System.out.println("Bogie ID " + key + " NOT FOUND in the consist.");
-        }
-    }
-}
-
-// Main Application
+// Train Consist Management App - UC20
 public class TrainConsistManagementApp {
+
+    // Collection of bogies
+    private List<String> bogies = new ArrayList<>();
+
+    // Method to add bogies
+    public void addBogie(String bogieId) {
+        bogies.add(bogieId);
+        System.out.println("Bogie " + bogieId + " added to train.");
+    }
+
+    /**
+     * UC20: Exception Handling During Search Operations
+     * Implements fail-fast validation
+     */
+    public String findBogie(String bogieId) {
+
+        // State Validation (Fail-Fast)
+        if (bogies.isEmpty()) {
+            throw new IllegalStateException(
+                    "Search failed: No bogies available in the train. Please add bogies first."
+            );
+        }
+
+        // Search Logic
+        for (String bogie : bogies) {
+            if (bogie.equals(bogieId)) {
+                return bogie;
+            }
+        }
+
+        return null; // Not found
+    }
+
+    // Main method
     public static void main(String[] args) {
 
-        // Sorted bogie IDs (IMPORTANT precondition)
-        String[] bogieIds = {"BG101", "BG205", "BG309", "BG412", "BG550"};
+        TrainConsistManagementApp train = new TrainConsistManagementApp();
 
-        // Optional safety: ensure sorting
-        Arrays.sort(bogieIds);
+        System.out.println("===== UC20: Exception Handling During Search =====\n");
 
-        System.out.println("Sorted Bogie IDs: " + Arrays.toString(bogieIds));
+        // Case 1: Search without adding bogies (FAIL-FAST)
+        try {
+            System.out.println("Attempting search in empty train...");
+            train.findBogie("BG101"); // should throw exception
+        } catch (IllegalStateException e) {
+            System.out.println("ERROR: " + e.getMessage());
+        }
 
-        System.out.println("\n---- Binary Search Tests ----");
+        // Add bogies
+        System.out.println("\nAdding bogies...\n");
+        train.addBogie("BG101");
+        train.addBogie("BG205");
+        train.addBogie("BG309");
 
-        // Test Cases
+        // Case 2: Valid search
+        try {
+            System.out.println("\nSearching for BG205...");
+            String result = train.findBogie("BG205");
 
-        // 1. Found
-        String key1 = "BG309";
-        BogieBinarySearch.displayResult(key1,
-                BogieBinarySearch.binarySearch(bogieIds, key1));
+            if (result != null) {
+                System.out.println("Bogie FOUND: " + result);
+            } else {
+                System.out.println("Bogie NOT FOUND");
+            }
+        } catch (Exception e) {
+            System.out.println("ERROR: " + e.getMessage());
+        }
 
-        // 2. Not Found
-        String key2 = "BG999";
-        BogieBinarySearch.displayResult(key2,
-                BogieBinarySearch.binarySearch(bogieIds, key2));
+        // Case 3: Bogie not found
+        try {
+            System.out.println("\nSearching for BG999...");
+            String result = train.findBogie("BG999");
 
-        // 3. First Element
-        String key3 = "BG101";
-        BogieBinarySearch.displayResult(key3,
-                BogieBinarySearch.binarySearch(bogieIds, key3));
+            if (result != null) {
+                System.out.println("Bogie FOUND: " + result);
+            } else {
+                System.out.println("Bogie NOT FOUND");
+            }
+        } catch (Exception e) {
+            System.out.println("ERROR: " + e.getMessage());
+        }
 
-        // 4. Last Element
-        String key4 = "BG550";
-        BogieBinarySearch.displayResult(key4,
-                BogieBinarySearch.binarySearch(bogieIds, key4));
-
-        // 5. Single Element
-        String[] single = {"BG101"};
-        String key5 = "BG101";
-        BogieBinarySearch.displayResult(key5,
-                BogieBinarySearch.binarySearch(single, key5));
-
-        System.out.println("\nProgram continues after search...");
+        System.out.println("\nProgram continues after handling exceptions...");
     }
 }
